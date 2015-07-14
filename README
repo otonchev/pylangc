@@ -1,0 +1,9 @@
+Simple Python-based Static Code Analyzer for C programs based on GLib/GStreamer.
+The tool takes advantage of the GObject-Introspection annotations built on top
+of GTK-Doc comment blocks. Note that this tool is proof-of-concept only.
+
+To be able to run it, you should install pylangparser first:
+    https://github.com/otonchev/pylangparser/wiki
+
+To run it, just type:
+    python c_code_analyzer.py
