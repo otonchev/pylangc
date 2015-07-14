@@ -589,8 +589,9 @@ statement = RecursiveParser()
 stop_statement = RecursiveParser()
 
 compound_statement = \
-    OperatorParser(L_BRACE) & ZeroOrMore(statement) & \
-    Optional(stop_statement) & OperatorParser(R_BRACE)
+    OperatorParser(L_BRACE) & ZeroOrMore(variable_declaration) & \
+    ZeroOrMore(statement) & Optional(stop_statement) & \
+    OperatorParser(R_BRACE)
 
 default_statement = \
     (KeywordParser(DEFAULT) & OperatorParser(COLON) & \
@@ -619,12 +620,7 @@ case_statements = \
 goto_statement = \
     KeywordParser(GOTO) & SymbolsParser(IDENTIFIER) & OperatorParser(SEMICOLON)
 
-# notice the usage of the '+=' operator below
-statement += \
-    stop_statement | \
-    goto_statement | \
-    compound_statement | \
-    (basic_statement & OperatorParser(SEMICOLON)) | \
+if_statement = \
     (KeywordParser(IF) & OperatorParser(L_PAR) & conditional_expression & \
         OperatorParser(R_PAR) & OperatorParser(SEMICOLON) & \
         KeywordParser(ELSE) & compound_statement) | \
@@ -645,7 +641,15 @@ statement += \
     (KeywordParser(IF) & OperatorParser(L_PAR) & conditional_expression & \
         OperatorParser(R_PAR) & compound_statement) | \
     (KeywordParser(IF) & OperatorParser(L_PAR) & conditional_expression & \
-        OperatorParser(R_PAR) & statement) | \
+        OperatorParser(R_PAR) & statement)
+
+# notice the usage of the '+=' operator below
+statement += \
+    stop_statement | \
+    goto_statement | \
+    compound_statement | \
+    (basic_statement & OperatorParser(SEMICOLON)) | \
+    if_statement | \
     (KeywordParser(WHILE) & OperatorParser(L_PAR) & conditional_expression & \
         OperatorParser(R_PAR) & compound_statement) | \
     (KeywordParser(DO) & compound_statement & KeywordParser(WHILE) & \
