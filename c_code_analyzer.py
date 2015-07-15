@@ -58,6 +58,8 @@ void b()
 
   if (FALSE)
     gst_object_unref (parent);
+
+  gst_element_get_parent (el);
 }
 
 """
@@ -220,10 +222,14 @@ def perform_call_search(group, level, gtk_table, allocations):
                 continue
 
             (gtk_ret, gtk_input_args) = args
-            if gtk_ret and var_name is not None:
-                # allocating variable
-                print("allocating variable: %s" % var_name)
-                allocations.append(var_name)
+            if gtk_ret:
+                if var_name is not None:
+                    # allocating variable
+                    print("allocating variable: %s" % var_name)
+                    allocations.append(var_name)
+                else:
+                    print("leaking memory")
+                    allocations.append("<NO_NAME>")
 
             func_args = sub_group[2]
 
