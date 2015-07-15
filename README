@@ -33,7 +33,8 @@ INFO: found function definition:
  [[['GstElement'], [[['*'], ['parent']]]]],
  [[[['parent'], ['='], [['gst_element_get_parent'], [['el']]]]],
   [[['do_something_with_pad'], [['pad']]]],
-  [['if'], [['FALSE']], [[['gst_object_unref'], [['parent']]]]]]]
+  [['if'], [['FALSE']], [[['gst_object_unref'], [['parent']]]]],
+  [[['gst_element_get_parent'], [['el']]]]]]
 
 calling function gst_element_get_parent
 allocating variable: parent
