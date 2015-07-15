@@ -21,6 +21,8 @@ void b()
 
   if (FALSE)
     gst_object_unref (parent);
+
+  gst_element_get_parent (el);
 }
 
 the script will output:
@@ -38,5 +40,6 @@ allocating variable: parent
 calling function do_something_with_pad
 calling function gst_object_unref
 freeing variable: parent
-WARNING: function returned, non freed allocations: ['parent']
+leaking memory
+WARNING: function returned, non freed allocations: ['parent', '<NO_NAME>']
 
