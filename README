@@ -7,3 +7,36 @@ To be able to run it, you should install pylangparser first:
 
 To run it, just type:
     python c_code_analyzer.py
+
+Example:
+
+If run for the following C program:
+
+void b()
+{
+  GstElement *parent;
+
+  parent = gst_element_get_parent (el);
+  do_something_with_pad (pad);
+
+  if (FALSE)
+    gst_object_unref (parent);
+}
+
+the script will output:
+
+INFO: found function definition:
+[['void'],
+ [['b']],
+ [[['GstElement'], [[['*'], ['parent']]]]],
+ [[[['parent'], ['='], [['gst_element_get_parent'], [['el']]]]],
+  [[['do_something_with_pad'], [['pad']]]],
+  [['if'], [['FALSE']], [[['gst_object_unref'], [['parent']]]]]]]
+
+calling function gst_element_get_parent
+allocating variable: parent
+calling function do_something_with_pad
+calling function gst_object_unref
+freeing variable: parent
+WARNING: function returned, non freed allocations: ['parent']
+
