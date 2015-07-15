@@ -55,7 +55,9 @@ void b()
 
   parent = gst_element_get_parent (el);
   do_something_with_pad (pad);
-  gst_object_unref (parent);
+
+  if (FALSE)
+    gst_object_unref (parent);
 }
 
 """
@@ -205,15 +207,14 @@ def perform_call_search(group, level, gtk_table, allocations):
             # func (args)
             #   ^    ^
             #   1    2
-            func_name = sub_group[1]
-            func_name_token = func_name.get_token()
+            func_name = sub_group[1].get_token()
             args = None
 
-            print("calling function %s" % func_name_token)
+            print("calling function %s" % func_name)
 
             try:
                 # function found in gtk doc
-                args = gtk_table[func_name_token]
+                args = gtk_table[func_name]
             except KeyError:
                 # function not found in gtk doc
                 continue
