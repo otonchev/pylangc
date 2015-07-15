@@ -32,13 +32,30 @@ int p (GstElement *el, gboolean doit)
 
     do_something_with_pad (pad);
 
+    //if (doit)
+    //  return 1;
+
     if (doit)
-      return 1;
+      gst_object_unref (pad);
+    else
+      //gst_object_unref (pad);
+      printf("hello world!");
+
+    //gst_object_unref (pad);
   }
 
   gst_object_unref (parent);
 
   return 0;
+}
+
+void b()
+{
+  GstElement *parent;
+
+  parent = gst_element_get_parent (el);
+  do_something_with_pad (pad);
+  gst_object_unref (parent);
 }
 
 """
@@ -192,6 +209,8 @@ def perform_call_search(group, level, gtk_table, allocations):
             func_name_token = func_name.get_token()
             args = None
 
+            print("calling function %s" % func_name_token)
+
             try:
                 # function found in gtk doc
                 args = gtk_table[func_name_token]
@@ -202,6 +221,7 @@ def perform_call_search(group, level, gtk_table, allocations):
             (gtk_ret, gtk_input_args) = args
             if gtk_ret and var_name is not None:
                 # allocating variable
+                print("allocating variable: %s" % var_name)
                 allocations.append(var_name)
 
             func_args = sub_group[2]
@@ -213,33 +233,71 @@ def perform_call_search(group, level, gtk_table, allocations):
                     # freeing variable
                     try:
                         i = allocations.index(arg_name)
+                        print("freeing variable: %s" % arg_name)
                         allocations.pop(i)
                     except ValueError:
-                        print("warning, variable '%s' not previously allocated" % arg_name)
+                        print("warning, variable '%s' not previously "
+                            "allocated, allocations: %s" % (arg_name,
+                                                             allocations))
                 index += 1
 
         # return statement
         elif sub_group.check_parser(c_grammar.stop_statement):
-            print("function return, non freed allocations: %s" % allocations)
+            if len(allocations) > 0:
+                print("WARNING: function return, non freed allocations: %s" %
+                    allocations)
+            return False
 
         # if statement
         elif sub_group.check_parser(c_grammar.if_statement):
             # perform deep search
             # sub group 1 - if, 2 - cond, 3 - statement, 4 - else, 5 - statement
             # we are interested in statements
-            perform_call_search([sub_group[3],], level + 1, gtk_table, allocations)
+
+            new_allocations1 = list(allocations)
+            new_allocations2 = list(allocations)
+
+            # check first branch of if..else
+            ret = perform_call_search([sub_group[3],], level + 1, gtk_table,
+                new_allocations1)
+            if not ret:
+                # branch ended up in return, function is exitting
+                allocations[:] = []
+                allocations = allocations + new_allocations1
+                return ret
+
+            # check second branch of if..else
             if sub_group[4] is not None:
-                perform_call_search([sub_group[5],], level + 1, gtk_table, allocations)
+                ret = perform_call_search([sub_group[5],], level + 1, gtk_table,
+                    new_allocations2)
+                if not ret:
+                    # branch ended up in return, function is exitting
+                    allocations[:] = []
+                    allocations = allocations + new_allocations2
+                    return ret
+
+            # choose longer list assuming unref was missed
+            allocations[:] = []
+            if len(new_allocations1) > len(new_allocations2):
+                allocations.extend(new_allocations1)
+            else:
+                allocations.extend(new_allocations2)
 
         # new block {}
         elif sub_group.check_parser(c_grammar.compound_statement):
             # perform deep search
-            perform_call_search(sub_group, level + 1, gtk_table, allocations)
+            ret = perform_call_search(sub_group, level + 1, gtk_table, allocations)
+            if not ret:
+                return ret
 
         # something else
         else:
             # perform deep search
-            perform_call_search(sub_group, level, gtk_table, allocations)
+            ret = perform_call_search(sub_group, level, gtk_table, allocations)
+            if not ret:
+                return ret
+
+    return True
 
 gtk_table = parse_gtk_doc(gtk_result)
 print("\nparsed gtk: %s" % gtk_table)
@@ -248,9 +306,13 @@ print("\nparsed gtk: %s" % gtk_table)
 for func_def in c_result:
     # found function definition, check it out
     if func_def.check_parser(c_grammar.function_definition):
-        print("\nfound function definition:")
+        print("\nINFO: found function definition:")
         func_def.pretty_print()
         print("\n\n")
         allocations = []
         perform_call_search(func_def, 0, gtk_table, allocations)
-        print("function returned, non freed allocations: %s" % allocations)
+        if len(allocations) > 0:
+            print("WARNING: function returned, non freed allocations: %s" %
+                allocations)
+        else:
+            print("INFO: no potential leaks found")
